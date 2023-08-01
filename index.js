@@ -126,7 +126,7 @@ const gameController = (() => {
             const newPlayer = _playerFactory(ai);
             _players.push(newPlayer);
         } else {
-            throw Error("Max 2 players")
+            throw new Error("Max 2 players")
         }
     }
     const switchPlayer = () => {
