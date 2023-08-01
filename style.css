@@ -1,0 +1,22 @@
+body {
+    color: white;
+    background-color: rgb(54, 54, 54);
+    display: flex;
+    justify-content: center;
+    height: 100svh;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif
+}
+
+#board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+}
+
+#board div {
+    border: 1px solid white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 5rem;
+}
