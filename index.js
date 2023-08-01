@@ -15,8 +15,8 @@ const gameBoard = (() => {
         if(_board[index] === null) {
             _board.splice(index, 1, player);
             displayController.render();
+            gameController.switchPlayer();
             console.log(gameBoard.checkWin())
-
             return true
         } else {
             return false
@@ -39,7 +39,6 @@ const gameBoard = (() => {
                 if(sign == null) {
                     return false
                 }
-
                 return bar.every(e => e === sign)
             }
 
@@ -88,7 +87,7 @@ const displayController = (() => {
             _boardNode.appendChild(node);
             node.addEventListener("click", (e) =>
             {
-                gameBoard.move(e.currentTarget.getAttribute("data-id"), "X");
+                gameBoard.move(e.currentTarget.getAttribute("data-id"), gameController.getCurrentPlayer().sign);
             })
 
             childNodes.push(node);
@@ -113,18 +112,41 @@ const displayController = (() => {
 })()
 
 const gameController = (() => {
-    let currentPlayer
+    let _players = [];
+    let currentPlayerID = 0;
+
+    const _playerFactory = (ai) => {
+        const sign = (_players.length > 0 ) ? "O" : "X";
+        const isAi = !!ai;
+
+        return {sign, isAi};
+    }
+    const addPlayer = (ai) => {
+        if(_players.length < 2) {
+            const newPlayer = _playerFactory(ai);
+            _players.push(newPlayer);
+        } else {
+            throw Error("Max 2 players")
+        }
+    }
+    const switchPlayer = () => {
+        currentPlayerID = currentPlayerID === 0 ? 1 : 0;
+    }
 
     const getCurrentPlayer = () => {
-        return currentPlayer
+        return _players[currentPlayerID]
     }
 
     return {
+        addPlayer,
+        switchPlayer,
         getCurrentPlayer
     }
 })()
 
 
+gameController.addPlayer(false);
+gameController.addPlayer(true);
 
 gameBoard.resetBoard();
 displayController.render();
