@@ -1,28 +1,10 @@
 const gameBoard = (() => {
     let _board = [];
 
-    const getBoard = () => {
-        return _board
+    const _hasMove = () => {
+        return _board.includes(null)
     }
-    const resetBoard = () => {
-        _board = [];
-        while(_board.length < 9) {
-            _board.push(null);
-        }
-    }
-    const move = (preindex, player) => {
-        const index = +preindex;
-        if(_board[index] === null) {
-            _board.splice(index, 1, player);
-            displayController.render();
-            gameController.switchPlayer();
-            console.log(gameBoard.checkWin())
-            return true
-        } else {
-            return false
-        }
-    }
-    const checkWin = () => {
+    const _checkWin = () => {
         const board = gameBoard.getBoard();
 
         function getIndexes(...args) {
@@ -68,48 +50,49 @@ const gameBoard = (() => {
         return horizontal() || vertical() || diagonal()
     }
 
+    const getBoard = () => {
+        return _board
+    }
+    const resetBoard = () => {
+        _board = [];
+        while(_board.length < 9) {
+            _board.push(null);
+        }
+    }
+    const move = (preindex, player) => {
+        const index = +preindex;
+        if(_board[index] === null) {
+            _board.splice(index, 1, player);
+            displayController.render();
+            if(!gameBoard.result()){
+                gameController.switchPlayer();
+            }
+            return true
+        } else {
+            return false
+        }
+    }
+    const result = () => {
+        if(_checkWin()) {
+            displayController.gameOver(gameController.getCurrentPlayer());
+            return true
+        } else if(!_hasMove()) {
+            displayController.gameOver();
+            return true
+        }
+    }
+    const calculateMove = () => {
+        return _board.indexOf(null)
+    }
+        
     return {
         getBoard,
         resetBoard,
         move,
-        checkWin
+        result,
+        calculateMove
     }
 })();
-
-const displayController = (() => {
-    const _boardNode = document.getElementById('board');
-    let childNodes = [];
-
-    const initial = () => {
-        for(i = 0; i < 9; i++) {
-            const node = document.createElement('div');
-            node.setAttribute('data-id', `${i}`)
-            _boardNode.appendChild(node);
-            node.addEventListener("click", (e) =>
-            {
-                gameBoard.move(e.currentTarget.getAttribute("data-id"), gameController.getCurrentPlayer().sign);
-            })
-
-            childNodes.push(node);
-        }
-
-    }
-
-    const render = () => {
-        const board = gameBoard.getBoard();
-
-        childNodes.forEach((element, index) => {
-            element.textContent = board[index];
-        })
-    }
-
-    initial();
-
-    return {
-        render
-    }
-
-})()
 
 const gameController = (() => {
     let _players = [];
@@ -131,19 +114,76 @@ const gameController = (() => {
     }
     const switchPlayer = () => {
         currentPlayerID = currentPlayerID === 0 ? 1 : 0;
+        displayController.changePlayer(getCurrentPlayer());
     }
-
     const getCurrentPlayer = () => {
         return _players[currentPlayerID]
+    }
+    const restart = () => {
+        gameBoard.resetBoard();
+        displayController.render();
+
     }
 
     return {
         addPlayer,
         switchPlayer,
-        getCurrentPlayer
+        getCurrentPlayer,
+        restart
     }
 })()
 
+const displayController = (() => {
+    const _boardNode = document.getElementById('board');
+    const _restartButton = document.getElementById('restart');
+    const _resultDisplay = document.getElementById('result-display');
+
+    let childNodes = [];
+
+    _restartButton.addEventListener('click', gameController.restart)
+
+    const initial = () => {
+        for(i = 0; i < 9; i++) {
+            const node = document.createElement('div');
+            node.setAttribute('data-id', `${i}`)
+            _boardNode.appendChild(node);
+            node.addEventListener("click", (e) =>
+            {
+                gameBoard.move(e.currentTarget.getAttribute("data-id"), gameController.getCurrentPlayer().sign);
+            })
+            childNodes.push(node);
+        }
+    }
+    const render = () => {
+        const board = gameBoard.getBoard();
+
+        childNodes.forEach((element, index) => {
+            element.textContent = board[index];
+        })
+    }
+    const disable = () => {
+        f 
+    }
+    const gameOver = (player = "") => {
+        if(player !== "") {
+            _resultDisplay.textContent = `${player.sign} Wins!`
+        } else {
+            _resultDisplay.textContent = "It's a tie!";
+        }
+    }
+    const changePlayer = (player) => {
+        _resultDisplay.textContent = `${player.sign}'s turn`
+    }
+
+    initial();
+
+    return {
+        render,
+        gameOver,
+        changePlayer
+    }
+
+})()
 
 gameController.addPlayer(false);
 gameController.addPlayer(true);
