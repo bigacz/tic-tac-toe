@@ -1,16 +1,41 @@
-const gameBoard = (() => {
-    let _board = [];
+const boardFactory = (preset = []) => {
+    let _board;
+    let  _currentPlayerID = 0;
+    
+    const restartBoard = () => {
+        _board = [];
+        while(_board.length < 9) {
+            _board.push(null);
+        }
+        _currentPlayerID = 0;
+    }
+    
+    if(preset = []) {
+        restartBoard();
+    }
 
-    const _hasMove = () => {
+    const getBoard = () => {
+        return _board
+    }
+    const move = (preid, sign) => {
+        const id = +preid;
+        if(_board[id] === null) {
+            _board.splice(id, 1, sign);
+        }
+        _switchPlayer();
+    }
+    const hasEmptySquare = () => {
         return _board.includes(null)
     }
-    const _checkWin = () => {
-        const board = gameBoard.getBoard();
-
+    const isSquareEmpty = (preid) => {
+        const id = +preid;
+        return _board[id] === null;
+    }
+    const getWinner = () => {
         function getIndexes(...args) {
             values = []
             args.forEach(e => {
-                const value = board[e] 
+                const value = _board[e] 
                 values.push(value);
             })
             return values 
@@ -21,21 +46,24 @@ const gameBoard = (() => {
                 if(sign == null) {
                     return false
                 }
-                return bar.every(e => e === sign)
+                return bar.every(e => e === sign) ? sign : false
             }
 
-            let win = false;
+            let winner = false;
             bars.forEach(bar => {
                 if(checkBar(bar)) {
-                    win = true;
+                    winner = checkBar(bar);
                 }
             })
+            if(winner === false && !hasEmptySquare()) {
+                winner = "TIE"
+            }
 
-            return win
+            return winner
         }
 
         function horizontal() {
-            const bars = [board.slice(0, 3), board.slice(3, 6), board.slice(6, 9)]
+            const bars = [_board.slice(0, 3), _board.slice(3, 6), _board.slice(6, 9)]
             return checkBars(bars);
         } 
         function vertical() {
@@ -49,145 +77,176 @@ const gameBoard = (() => {
 
         return horizontal() || vertical() || diagonal()
     }
+    const _switchPlayer = () => {
+        _currentPlayerID = _currentPlayerID === 0 ? 1 : 0;
+    }
+    const getCurrentPlayerID = () => {
+        return _currentPlayerID;
+    }
 
-    const getBoard = () => {
-        return _board
-    }
-    const resetBoard = () => {
-        _board = [];
-        while(_board.length < 9) {
-            _board.push(null);
-        }
-    }
-    const move = (preindex, player) => {
-        const index = +preindex;
-        if(_board[index] === null) {
-            _board.splice(index, 1, player);
-            displayController.render();
-            if(!gameBoard.result()){
-                gameController.switchPlayer();
-            }
-            return true
-        } else {
-            return false
-        }
-    }
-    const result = () => {
-        if(_checkWin()) {
-            displayController.gameOver(gameController.getCurrentPlayer());
-            return true
-        } else if(!_hasMove()) {
-            displayController.gameOver();
-            return true
-        }
-    }
-    const calculateMove = () => {
-        return _board.indexOf(null)
-    }
-        
     return {
+        restartBoard,
         getBoard,
-        resetBoard,
+        getWinner,
         move,
-        result,
-        calculateMove
+        hasEmptySquare,
+        isSquareEmpty,
+        getCurrentPlayerID,
     }
-})();
+}
 
-const gameController = (() => {
-    let _players = [];
-    let currentPlayerID = 0;
+const playerController = (() => {
+    let _players = []
 
-    const _playerFactory = (ai) => {
-        const sign = (_players.length > 0 ) ? "O" : "X";
-        const isAi = !!ai;
-
-        return {sign, isAi};
-    }
-    const addPlayer = (ai) => {
-        if(_players.length < 2) {
-            const newPlayer = _playerFactory(ai);
-            _players.push(newPlayer);
-        } else {
-            throw new Error("Max 2 players")
+    const add = (isAi = false) => {
+        if(_players.length >= 2) {
+            throw new Error('max 2 players')
         }
-    }
-    const switchPlayer = () => {
-        currentPlayerID = currentPlayerID === 0 ? 1 : 0;
-        displayController.changePlayer(getCurrentPlayer());
-    }
-    const getCurrentPlayer = () => {
-        return _players[currentPlayerID]
+        const sign = _players.length === 0 ? "X" : "O";
+        const player = {isAi, sign}
+        
+        _players.push(player);
     }
     const restart = () => {
-        gameBoard.resetBoard();
+        _players = []
+    } 
+    const getPlayer = (id) => {
+        return  _players[id]
+    }
+    return {
+        add,
+        restart,
+        getPlayer
+    }
+})()
+
+const gameController = (() => {
+    const move = (id) => {
+        const playerID = mainBoard.getCurrentPlayerID();
+        const sign = playerController.getPlayer(playerID).sign;
+        const isEmpty = mainBoard.isSquareEmpty(id);
+
+        mainBoard.move(id, sign);
         displayController.render();
 
-    }
+        const outcome = mainBoard.getWinner()
+        _handleOutcome(outcome);
 
+    }
+    const restart = () => {
+        mainBoard.restartBoard();
+        displayController.restart();
+
+    }
+    const _handleOutcome = (outcome) => {
+        switch(outcome) {
+            case 'X':
+                displayController.setDisplay("X won!");
+                displayController.disableClicking();
+                break;
+            case 'O':
+                displayController.setDisplay("O won!");
+                displayController.disableClicking();
+                break;
+            case 'TIE':
+                displayController.setDisplay("It's a tie!");
+                displayController.disableClicking();
+
+                break;
+            case false:
+                break;
+        }
+
+    }
     return {
-        addPlayer,
-        switchPlayer,
-        getCurrentPlayer,
+        move,
         restart
     }
 })()
 
+
 const displayController = (() => {
-    const _boardNode = document.getElementById('board');
-    const _restartButton = document.getElementById('restart');
-    const _resultDisplay = document.getElementById('result-display');
+    const xsign = document.getElementById("x-sign");
+    const osign = document.getElementById("o-sign");
+    const _mainNode = document.getElementById("board");
+    let _squareNodes = [];
 
-    let childNodes = [];
+    const _initial = () => {
+        const _restartButton = document.getElementById("restart");
+        _restartButton.addEventListener("click", gameController.restart)
 
-    _restartButton.addEventListener('click', gameController.restart)
-
-    const initial = () => {
         for(i = 0; i < 9; i++) {
-            const node = document.createElement('div');
-            node.setAttribute('data-id', `${i}`)
-            _boardNode.appendChild(node);
-            node.addEventListener("click", (e) =>
-            {
-                gameBoard.move(e.currentTarget.getAttribute("data-id"), gameController.getCurrentPlayer().sign);
-            })
-            childNodes.push(node);
+            const node = document.createElement("div");
+            node.setAttribute('data-id', `${i}`);
+            _mainNode.appendChild(node);
+            _squareNodes.push(node);
+        }
+        enableClicking();
+    }   
+    
+    const enableClicking = () => {
+        _squareNodes.forEach((node) => {
+            node.addEventListener("click", _callMove);
+        })
+    }
+    const disableClicking = () => {
+        _squareNodes.forEach((node) => {
+            node.removeEventListener("click", _callMove);
+        })
+    }
+    const _callMove = (event) => {
+        const node = event.currentTarget
+        const id = node.getAttribute("data-id");
+        const text = node.textContent
+        if(!text) {
+            gameController.move(id);
+            _switchPlayer()
         }
     }
-    const render = () => {
-        const board = gameBoard.getBoard();
+    const _switchPlayer = () => {
 
-        childNodes.forEach((element, index) => {
+        const xclass = xsign.classList.contains("player-active")
+
+        xsign.classList.toggle("player-active")
+        osign.classList.toggle("player-active")
+    }
+    const _restartPlayer = () => {
+        xsign.classList.add("player-active")
+        osign.classList.remove("player-active");
+    }
+    const render = () => {
+        const board = mainBoard.getBoard();
+        
+        _squareNodes.forEach((element, index) => {
             element.textContent = board[index];
         })
     }
-    const disable = () => {
-        f 
-    }
-    const gameOver = (player = "") => {
-        if(player !== "") {
-            _resultDisplay.textContent = `${player.sign} Wins!`
-        } else {
-            _resultDisplay.textContent = "It's a tie!";
-        }
-    }
-    const changePlayer = (player) => {
-        _resultDisplay.textContent = `${player.sign}'s turn`
+    const restart = () => {
+        render();
+        _restartPlayer();
+        setDisplay();
+        enableClicking();
+    }   
+    const setDisplay = (text) => {
+        const display = document.getElementById("result-display");
+        display.textContent = text;
     }
 
-    initial();
+    _initial();
 
     return {
+        enableClicking,
+        disableClicking,
         render,
-        gameOver,
-        changePlayer
+        restart,
+        setDisplay
     }
-
 })()
 
-gameController.addPlayer(false);
-gameController.addPlayer(true);
 
-gameBoard.resetBoard();
-displayController.render();
 
+const mainBoard = boardFactory();
+
+
+playerController.add()
+playerController.add()
