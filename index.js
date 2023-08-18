@@ -1,6 +1,7 @@
 const boardFactory = (preset = []) => {
-    let _board;
+    let _board = preset;
     let  _currentPlayerID = 0;
+    let _lastMove;
     
     const restartBoard = () => {
         _board = [];
@@ -9,20 +10,18 @@ const boardFactory = (preset = []) => {
         }
         _currentPlayerID = 0;
     }
-    
-    if(preset = []) {
-        restartBoard();
-    }
-
     const getBoard = () => {
         return _board
     }
-    const move = (preid, sign) => {
+    const move = (preid) => {
         const id = +preid;
         if(_board[id] === null) {
+            const currentPlayer = playerController.getPlayer(_currentPlayerID);
+            const sign = currentPlayer.sign;
             _board.splice(id, 1, sign);
+            setCurrentPlayer();
+            _lastMove = id;
         }
-        _switchPlayer();
     }
     const hasEmptySquare = () => {
         return _board.includes(null)
@@ -77,12 +76,59 @@ const boardFactory = (preset = []) => {
 
         return horizontal() || vertical() || diagonal()
     }
-    const _switchPlayer = () => {
-        _currentPlayerID = _currentPlayerID === 0 ? 1 : 0;
+    const setCurrentPlayer = () => {
+        const countSign = (sign) => {
+            const counter = _board.reduce((total, current) => {
+                if(current === sign) {
+                    return ++total
+                }
+                return total
+            }, 0)
+            return counter
+        }
+
+        const xcount = countSign("X");
+        const ocount = countSign("O");
+
+        _currentPlayerID = xcount === ocount ? 0 : 1;
     }
     const getCurrentPlayerID = () => {
         return _currentPlayerID;
     }
+    const rateMove = (id, maxSign) => {
+        const minSign = maxSign === "X" ? "O" : "X";
+        const boardCopy = [..._board];
+        const newBoard = boardFactory(boardCopy);
+        newBoard.move(id)
+        const outcome = newBoard.getWinner();
+
+        switch(outcome) {
+            case maxSign:
+                return 1;
+            case minSign:
+                return -1;
+            case 'TIE':
+                return 0;
+            case false:
+                return 0;
+        }
+    }
+    const _minmax = () => {
+        const max = (one, two) => {
+            return one > two ? one : two;
+        }
+        const min = (one, two) => {
+            return one < two ? one : two;
+        }
+    }
+    const aiMove = () => {
+        
+    }
+
+    if(_board.length === 0) {
+        restartBoard();
+    }
+    setCurrentPlayer();
 
     return {
         restartBoard,
@@ -92,6 +138,9 @@ const boardFactory = (preset = []) => {
         hasEmptySquare,
         isSquareEmpty,
         getCurrentPlayerID,
+        rateMove,
+        aiMove,
+        setCurrentPlayer
     }
 }
 
@@ -122,11 +171,9 @@ const playerController = (() => {
 
 const gameController = (() => {
     const move = (id) => {
-        const playerID = mainBoard.getCurrentPlayerID();
-        const sign = playerController.getPlayer(playerID).sign;
         const isEmpty = mainBoard.isSquareEmpty(id);
 
-        mainBoard.move(id, sign);
+        mainBoard.move(id);
         displayController.render();
 
         const outcome = mainBoard.getWinner()
@@ -243,10 +290,7 @@ const displayController = (() => {
     }
 })()
 
-
-
 const mainBoard = boardFactory();
-
 
 playerController.add()
 playerController.add()
