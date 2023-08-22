@@ -1,11 +1,12 @@
 :root {
-    --first-color: #900C3F;
-    --second-color: #C70039;
-    --third-color: #F94C10;
-    --fourth-color: #F8DE22;
+    --first-color: #191A19;
+    --second-color: #1E5128;
+    --third-color: #4E9F3D;
+    --fourth-color: #D8E9A8;
 
     --fs-1100: clamp(7rem, 12vw + 1rem, 9rem);
-    --fs-1000: clamp(4rem, 12vw + 1rem, 7rem);
+    --fs-1050: clamp(5rem, 12vw + 1rem, 7rem);
+    --fs-1000: clamp(3rem, 12vw + 1rem, 7rem);
     --fs-900: 3rem;
     --fs-800: 2rem;
     --fs-700: 1.4rem;
@@ -45,6 +46,7 @@ main {
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: repeat(2, max-content);
+
     gap: var(--fs-300);
 }
 
@@ -61,8 +63,9 @@ main {
 }
 
 .player-active {
-    transition: all 0.2s;
-    transform: scale(1.4);
+    transition: all 1s;
+    
+
 }
 
 .player-panel button {
@@ -93,7 +96,7 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: var(--fs-1000);
+    font-size: var(--fs-1050);
     font-weight: 600;
 }
 
