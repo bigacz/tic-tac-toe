@@ -9,7 +9,7 @@ const min = (one, two) => {
 const boardFactory = (preset = []) => {
     let _board = preset;
     let  _currentPlayerID = 0;
-    let _lastMove;
+
     
     const restartBoard = () => {
         _board = [];
@@ -28,7 +28,6 @@ const boardFactory = (preset = []) => {
             const sign = currentPlayer.sign;
             _board.splice(id, 1, sign);
             setCurrentPlayer();
-            _lastMove = id;
         }
     }
     const hasEmptySquare = () => {
@@ -71,9 +70,6 @@ const boardFactory = (preset = []) => {
                     winner = checkBar(bar);
                 }
             })
-            if(winner === false && !hasEmptySquare()) {
-                winner = "TIE"
-            }
 
             return winner
         }
@@ -91,7 +87,11 @@ const boardFactory = (preset = []) => {
             return checkBars(bars);
         }
 
-        return horizontal() || vertical() || diagonal()
+        let state = horizontal() || vertical() || diagonal();
+        if(!state && !hasEmptySquare()) {
+            state = "TIE";
+        }
+        return state
     }
     const setCurrentPlayer = () => {
         const countSign = (sign) => {
@@ -132,22 +132,62 @@ const boardFactory = (preset = []) => {
                 return 0;
         }
     }
-    const aiMove = () => {
-        const emptySquares = getEmptySquares();
-        const sign = playerController.getPlayer(_currentPlayerID).sign;
-        
-        let squareId = 0;
-        let score = -1;
-        emptySquares.forEach((value) => {
-            const newScore = rateMove(value, sign);
-            if(newScore > score) {
-                score = newScore;
-                squareId = value
-            }
-        })
-        move(squareId);
-        displayController.render();
 
+    const minmax = (maxPlayer, maxSign) => {
+        let score = rateMove(false, maxSign);
+
+        if(score == 1) return score;
+
+        if(score == -1) return score;
+
+        if(!hasEmptySquare()) return 0;
+
+
+        if(maxPlayer) {
+            let best = -1000;
+            const emptySquares = getEmptySquares();
+
+            emptySquares.forEach((squareID) => {
+                const newBoard = boardFactory(getBoard());
+                newBoard.move(squareID);
+                best = Math.max(best, newBoard.minmax(false, maxSign));
+            })
+            return best
+        } else {
+            let best = 1000;
+            const emptySquares = getEmptySquares();
+            emptySquares.forEach((squareID) => {
+                const newBoard = boardFactory(getBoard());
+                newBoard.move(squareID);
+                best = Math.min(best, newBoard.minmax(true, maxSign));
+            })
+            return best
+        }
+    }
+    const aiMove = () => {
+        const emptySquares = getEmptySquares(); 
+        const sign = playerController.getPlayer(_currentPlayerID).sign;
+    
+        let bestValue = -1000;
+        let bestID = -1;
+        emptySquares.forEach((squareID) => {
+            const newBoard = boardFactory(getBoard());
+            newBoard.move(squareID)
+            
+
+            
+            const compareValue = newBoard.minmax(false, sign);
+            if(compareValue > bestValue) {
+                bestValue = compareValue;
+                bestID = squareID;
+            }
+            
+
+        })
+
+        move(bestID);
+
+        displayController.render();
         const outcome = mainBoard.getWinner()
         gameController.handleOutcome(outcome);
         displayController.switchPlayer();
@@ -170,6 +210,7 @@ const boardFactory = (preset = []) => {
         aiMove,
         setCurrentPlayer,
         getEmptySquares,
+        minmax,
     }
 }
 
@@ -234,14 +275,16 @@ const gameController = (() => {
 
         mainBoard.move(id);
         displayController.render();
-        checkWin();
+        if(!_isOver) {
+            checkWin();
+        }
 
         const playerId = mainBoard.getCurrentPlayerID();
         const player = playerController.getPlayer(playerId);
-        if(player.isAi) {
+        if(player.isAi && !_isOver) {
             mainBoard.aiMove();
-            checkWin();
         }
+
     }
     const checkWin = () => {
         const outcome = mainBoard.getWinner()
@@ -260,13 +303,16 @@ const gameController = (() => {
 
         if(playerOne.isAi) {
             mainBoard.aiMove();
-            checkWin();
+            if(!_isOver) {
+                checkWin();
+            }
         }
         if(playerOne.isAi && playerTwo.isAi) {
             do {
                 mainBoard.aiMove();
-                checkWin();
-                console.log("elo")
+                if(!_isOver) {
+                    checkWin();
+                }
             } while(!_isOver)
         }
 
