@@ -5,8 +5,8 @@
     --fourth-color: #D8E9A8;
 
     --fs-1100: clamp(7rem, 12vw + 1rem, 9rem);
-    --fs-1050: clamp(5rem, 12vw + 1rem, 7rem);
-    --fs-1000: clamp(3rem, 12vw + 1rem, 7rem);
+    --fs-1050: clamp(6rem, 12vw + 1rem, 7rem);
+    --fs-1000: clamp(5rem, 12vw + 1rem, 9rem);
     --fs-900: 3rem;
     --fs-800: 2rem;
     --fs-700: 1.4rem;
@@ -16,12 +16,20 @@
     --fs-200: 0.3rem;
 }
 
+@font-face {
+    font-family: headerFont;
+    src: url(assets/headerFont.ttf);
+}
+
 h1 {
     font-size: var(--fs-1000);
     text-shadow: 5px 4px 0px var(--second-color);
     letter-spacing: 0.2rem;
     margin: 0;
-    padding: 0;
+    padding-top: 0.2em;
+    font-family: headerFont;
+    line-height: 1em;
+    
 }
 
 * {
@@ -63,7 +71,9 @@ main {
 }
         
 .player-active {
-    transition: all 1s;
+    text-shadow: 3px 3px 0px var(--second-color);
+    color: var(--third-color);
+    transition: all 0.2s;
 }
     
 .player-panel button {
@@ -73,6 +83,7 @@ main {
     background-color: var(--second-color);
     font-size: var(--fs-700);
     font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .buttons-wrapper {

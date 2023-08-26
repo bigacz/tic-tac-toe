@@ -237,18 +237,21 @@ const playerController = (() => {
         switch(id) {
             case 0:
                 add(false);
-                add(false);
+                add(true);
                 break;
             case 1:
                 add(false);
-                add(true);
+                add(false);
                 break;
-
+            case 2:
+                add(true);
+                add(false);
+                break;
         }
     }
     const initial = () => {
         add(false);
-        add(false);
+        add(true);
     }
     
     
@@ -265,6 +268,14 @@ const gameController = (() => {
     let _isOver = false;
     let _currentMode = 0;
 
+    const changeAiMode = (sign) => {
+        if(sign === "X") {
+            playerController.changeMode(1);
+        } else if(sign === "O") {
+            playerController.changeMode(2);
+        }
+        restart();
+    }
     const changeMode = () => {
         _currentMode = _currentMode === 0 ? 1 : 0;
         playerController.changeMode(_currentMode);
@@ -341,6 +352,7 @@ const gameController = (() => {
     }
 
     return {
+        changeAiMode,
         move,
         restart,
         handleOutcome,
@@ -361,6 +373,14 @@ const displayController = (() => {
     const _initial = () => {
         restartButton.addEventListener("click", gameController.restart)
         _modeButton.addEventListener("click", changeMode)
+
+        xsign.addEventListener("click", () => {
+            gameController.changeAiMode("X")
+        })
+        osign.addEventListener("click", () => {
+            gameController.changeAiMode("O")
+        })
+        
 
         for(i = 0; i < 9; i++) {
             const node = document.createElement("div");
